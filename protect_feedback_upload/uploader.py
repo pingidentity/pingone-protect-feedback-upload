@@ -40,10 +40,12 @@ def run_upload(
     :class:`.pingcli_client.PingcliPoster`. With ``dry_run`` the poster is
     never called — the report carries validation results only.
     """
-    parsed, parse_errors, fmt = read_input(input_path)
+    parsed, parse_errors, fmt, raw_rows = read_input(input_path)
 
     report = UploadReport()
     report.skipped_items = list(parse_errors)
+    report.raw_rows = raw_rows
+    report.input_format = fmt
 
     # Local pre-validation: a fail-fast convenience for the user — the API
     # remains authoritative. Items with violations are never sent.
@@ -55,6 +57,9 @@ def run_upload(
         else:
             items.append(tagged)
     report.requested = len(items)
+    # Every parsed row (valid or not) keyed by input position — used by
+    # --errors-out to reconstruct rejected rows with their data intact.
+    report.items_by_index = {t.input_index: t.item for t in parsed}
 
     if not items:
         # Nothing valid to send; the report still lists the skipped rows.

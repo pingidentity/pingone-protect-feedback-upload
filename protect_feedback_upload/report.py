@@ -35,6 +35,19 @@ class UploadReport:
     skipped_items: list[ValidationError] = field(default_factory=list)
     aborted: bool = False
     abort_error: ErrorObject | None = None
+    raw_rows: dict = field(default_factory=dict)
+    items_by_index: dict = field(default_factory=dict)
+    input_format: str = "csv"
+
+    def write_errors_file(self, path: str) -> int:
+        """Write all rejected rows (local skips + API failures) to ``path``
+        in the input's format. Returns the row count written."""
+        from .errors_out import write_errors
+
+        return write_errors(
+            path, self.input_format, self.skipped_items, self.failed_items,
+            self.items_by_index, self.raw_rows,
+        )
 
     def to_wire(self) -> dict:
         out: dict = {

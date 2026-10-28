@@ -41,7 +41,7 @@ CSV_INPUT = (
 
 class TestParseCSV(unittest.TestCase):
     def test_canonical_two_rows(self):
-        items, errs = parse_csv(CSV_INPUT)
+        items, errs, _ = parse_csv(CSV_INPUT)
         self.assertEqual(errs, [])
         self.assertEqual(len(items), 2)
 
@@ -60,7 +60,7 @@ class TestParseCSV(unittest.TestCase):
             "CHARGEBACK,REGISTRATION,2026-05-15T10:30:00.000Z,Chargeback,fraud-analyst@acme.com,"
             'HIGH,BOT_FARM,"{""src_ip"": ""1.2.3.4""}"\n'
         )
-        items, errs = parse_csv(shuffled)
+        items, errs, _ = parse_csv(shuffled)
         self.assertEqual(errs, [])
         self.assertEqual(items[0].item.verdict, "FRAUD")
         self.assertEqual(items[0].item.attributes, {"src_ip": "1.2.3.4"})
@@ -72,14 +72,14 @@ class TestParseCSV(unittest.TestCase):
 
     def test_wrong_field_count_row(self):
         bad = CSV_INPUT + "RISK_EVALUATION_ID\n"
-        items, errs = parse_csv(bad)
+        items, errs, _ = parse_csv(bad)
         self.assertEqual(len(errs), 1)
         self.assertIn("fields", errs[0].message)
         self.assertEqual(errs[0].source_line, 4)
 
     def test_bad_attributes_cell(self):
         bad = CSV_INPUT.replace('"{""src_ip"": ""192.0.2.45""}"', "not-json")
-        items, errs = parse_csv(bad)
+        items, errs, _ = parse_csv(bad)
         self.assertEqual(len(errs), 1)
         self.assertEqual(errs[0].field, "attributes")
 
@@ -97,7 +97,7 @@ class TestParseNDJSON(unittest.TestCase):
             '"verdict":"SUSPECTED_FRAUD","occurredFrom":"2026-01-25T08:51:01.000Z",'
             '"occurredTo":"2026-01-27T17:26:04.000Z"}\n'
         )
-        items, errs = parse_ndjson(content)
+        items, errs, _ = parse_ndjson(content)
         self.assertEqual(errs, [])
         self.assertEqual(len(items), 2)
         self.assertEqual(items[0].source_line, 1)
@@ -108,7 +108,7 @@ class TestParseNDJSON(unittest.TestCase):
             '\n{"subject":{"type":"EXTERNAL_TRANSACTION_ID","value":"TXN-1"},'
             '"verdict":"FRAUD","occurredFrom":"2026-05-10T08:03:17.000Z"}\n\n'
         )
-        items, errs = parse_ndjson(content)
+        items, errs, _ = parse_ndjson(content)
         self.assertEqual(errs, [])
         self.assertEqual(items[0].source_line, 2)
 
@@ -118,14 +118,14 @@ class TestParseNDJSON(unittest.TestCase):
             '{"subject":{"type":"EXTERNAL_TRANSACTION_ID","value":"TXN-1"},'
             '"verdict":"FRAUD","occurredFrom":"2026-05-10T08:03:17.000Z"}\n'
         )
-        items, errs = parse_ndjson(content)
+        items, errs, _ = parse_ndjson(content)
         self.assertEqual(len(items), 1)
         self.assertEqual(len(errs), 1)
         self.assertEqual(errs[0].source_line, 1)
         self.assertIn("malformed JSON", errs[0].message)
 
     def test_non_object_line(self):
-        items, errs = parse_ndjson('"just a string"\n')
+        items, errs, _ = parse_ndjson('"just a string"\n')
         self.assertEqual(items, [])
         self.assertEqual(len(errs), 1)
         self.assertIn("not a JSON object", errs[0].message)
@@ -137,3 +137,18 @@ class TestParseNDJSON(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestRawRecords(unittest.TestCase):
+    def test_csv_raw_records_keyed_by_input_index(self):
+        _, _, raw = parse_csv(CSV_INPUT)
+        self.assertEqual(len(raw), 2)
+        self.assertEqual(raw[1][0], "RISK_EVALUATION_ID")
+        self.assertEqual(raw[2][1], "")  # TIME_RANGE has empty subject_value
+
+    def test_ndjson_raw_lines_keyed_by_input_index(self):
+        content = '{"bad line\n{"x": 1}\n'
+        _, errs, raw = parse_ndjson(content)
+        self.assertEqual(len(errs), 1)
+        self.assertIn("bad line", raw[1])
+        self.assertEqual(raw[2], '{"x": 1}')

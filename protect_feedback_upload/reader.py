@@ -115,11 +115,13 @@ def _parse_csv_record(record: list[str], col_index: dict[str, int], header_len: 
     return item, []
 
 
-def parse_csv(content: str) -> tuple[list[TaggedItem], list[ValidationError]]:
+def parse_csv(content: str) -> tuple[list[TaggedItem], list[ValidationError], dict[int, list[str]]]:
     """Parse RFC 4180 CSV.
 
     The first record is the header; column order is free but every record
-    must carry exactly the header's columns.
+    must carry exactly the header's columns. Returns the valid items, the
+    validation errors, and every raw data record keyed by input index (for
+    --errors-out reconstruction, including rows that failed to parse).
     """
     reader = csv.reader(io.StringIO(content))
     records = list(reader)
@@ -136,10 +138,12 @@ def parse_csv(content: str) -> tuple[list[TaggedItem], list[ValidationError]]:
 
     items: list[TaggedItem] = []
     errs: list[ValidationError] = []
+    raw_records: dict[int, list[str]] = {}
 
     for i, record in enumerate(records[1:]):
         input_index = i + 1
         source_line = i + 2  # header is line 1
+        raw_records[input_index] = record
 
         item, row_errs = _parse_csv_record(record, col_index, len(header))
         for row_err in row_errs:
@@ -150,18 +154,20 @@ def parse_csv(content: str) -> tuple[list[TaggedItem], list[ValidationError]]:
         if not row_errs:
             items.append(TaggedItem(item=item, input_index=input_index, source_line=source_line))
 
-    return items, errs
+    return items, errs, raw_records
 
 
-def parse_ndjson(content: str) -> tuple[list[TaggedItem], list[ValidationError]]:
+def parse_ndjson(content: str) -> tuple[list[TaggedItem], list[ValidationError], dict[int, str]]:
     """Parse newline-delimited JSON, one object per line.
 
     Blank lines are skipped. A malformed line yields a validation error for
     that line and parsing continues, so a single bad line does not hide the
-    errors on later lines.
+    errors on later lines. Returns the valid items, the validation errors,
+    and every raw line keyed by input index (for --errors-out).
     """
     items: list[TaggedItem] = []
     errs: list[ValidationError] = []
+    raw_lines: dict[int, str] = {}
 
     input_index = 0
     for line_no, raw_line in enumerate(content.split("\n")):
@@ -170,6 +176,7 @@ def parse_ndjson(content: str) -> tuple[list[TaggedItem], list[ValidationError]]
             continue
 
         input_index += 1
+        raw_lines[input_index] = line
         try:
             obj = json.loads(line)
         except json.JSONDecodeError as exc:
@@ -198,7 +205,7 @@ def parse_ndjson(content: str) -> tuple[list[TaggedItem], list[ValidationError]]
     if input_index == 0:
         raise ValueError("NDJSON input is empty: expected at least one JSON object")
 
-    return items, errs
+    return items, errs, raw_lines
 
 
 def _item_from_json(obj: dict) -> RiskFeedback:
@@ -223,11 +230,12 @@ def _item_from_json(obj: dict) -> RiskFeedback:
     )
 
 
-def read_input(path: str) -> tuple[list[TaggedItem], list[ValidationError], str]:
+def read_input(path: str) -> tuple[list[TaggedItem], list[ValidationError], str, dict]:
     """Read a label file (or stdin with ``-``), sniff the format, parse it.
 
-    Returns (valid items, validation errors, format name). Raises ValueError
-    for structurally broken input (empty file, missing CSV columns).
+    Returns (valid items, validation errors, format name, raw rows by input
+    index). Raises ValueError for structurally broken input (empty file,
+    missing CSV columns).
     """
     if path == "-":
         content = sys.stdin.read()
@@ -237,7 +245,7 @@ def read_input(path: str) -> tuple[list[TaggedItem], list[ValidationError], str]
 
     fmt = sniff_format(path, content)
     if fmt == _FORMAT_NDJSON:
-        items, errs = parse_ndjson(content)
+        items, errs, raw_rows = parse_ndjson(content)
     else:
-        items, errs = parse_csv(content)
-    return items, errs, fmt
+        items, errs, raw_rows = parse_csv(content)
+    return items, errs, fmt, raw_rows

@@ -80,6 +80,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="report format (default text)",
     )
     p_upload.add_argument(
+        "--errors-out",
+        default=None,
+        metavar="FILE",
+        help=(
+            "write all rejected rows (local skips + API failures) to FILE, "
+            "in the input's format, ready to fix and re-submit"
+        ),
+    )
+    p_upload.add_argument(
         "--pingcli-path",
         default="pingcli",
         help="path to the pingcli binary (default: PATH lookup)",
@@ -133,6 +142,14 @@ def main(argv: list[str] | None = None) -> int:
         print(report.render_json())
     else:
         print(report.render_text())
+
+    if args.errors_out:
+        try:
+            count = report.write_errors_file(args.errors_out)
+        except OSError as exc:
+            print(f"Cannot write --errors-out file: {exc}", file=sys.stderr)
+            return EXIT_INPUT_ERROR
+        print(f"Rejected rows written to {args.errors_out} ({count} rows)")
 
     if report.aborted:
         return EXIT_ABORTED
