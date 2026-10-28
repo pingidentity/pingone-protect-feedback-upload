@@ -1,0 +1,5 @@
+subject_type,subject_value,verdict,occurred_from,occurred_to,trigger,flow_type,confirmed_at,reason,analyst,confidence,fraud_type,attributes
+EXTERNAL_TRANSACTION_ID,TXN-DEMO-1,FRAUD,2026-10-22T09:00:00.000Z,,MANUAL_REVIEW,TRANSACTION,,Demo run: transaction flagged FRAUD,analyst@yourcompany.com,HIGH,CARD_TESTING,
+EXTERNAL_TRANSACTION_ID,TXN-DEMO-2,SUSPECTED_FRAUD,2026-10-22T09:05:00.000Z,,CUSTOMER_COMPLAINT,AUTHENTICATION,,Demo run: transaction flagged SUSPECTED_FRAUD,analyst@yourcompany.com,MEDIUM,,
+EXTERNAL_TRANSACTION_ID,TXN-DEMO-3,LEGITIMATE,2026-10-22T09:10:00.000Z,,CUSTOMER_COMPLAINT,AUTHENTICATION,,Demo run: false positive — verified legitimate,analyst@yourcompany.com,LOW,,
+IP_ADDRESS,198.51.100.78,FRAUD,2026-10-22T10:01:00.000Z,,THIRD_PARTY_SIGNAL,ACCESS,,Demo run: known bot-farm ASN,analyst@yourcompany.com,HIGH,CREDENTIAL_STUFFING,
