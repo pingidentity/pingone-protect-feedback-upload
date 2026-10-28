@@ -31,10 +31,9 @@ duplicates successful labels. The bulk workflow logic lives here:
 ## Requirements
 
 - Python 3.10+
-- [Ping CLI](https://github.com/pingidentity/pingcli), authenticated for
-  the target environment (`pingcli pingone init`)
-- The environment must have the risk feedback v2 bulk endpoint enabled
-  (feature-flag gated server-side)
+- [Ping CLI](https://developer.pingidentity.com/pingcli/1.10/install/macos.html)
+  (installation guides for all platforms), authenticated for the target
+  environment (`pingcli pingone init`)
 
 ## Usage
 
@@ -45,13 +44,16 @@ pip install pingone-protect-feedback-upload
 pip install .
 
 # Validate and batch only — nothing is sent
-protect-feedback-upload upload labels.csv --environment-id <uuid> --dry-run
+protect-feedback-upload upload labels.csv --dry-run
 
-# Upload
+# Upload — the environment ID is taken from the pingcli profile
+protect-feedback-upload upload labels.csv -P <profile>
+
+# Explicit override, if the profile's environment differs from the target
 protect-feedback-upload upload labels.csv --environment-id <uuid> -P <profile>
 
 # Machine-readable report
-protect-feedback-upload upload labels.csv --environment-id <uuid> -O json
+protect-feedback-upload upload labels.csv -O json
 ```
 
 Exit codes: `0` all rows uploaded · `1` some rows failed or were skipped ·

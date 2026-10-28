@@ -52,6 +52,37 @@ from .batcher import ErrorObject
 # RISK-FEEDBACK-V2-CONTRACT-VERIFIED.md in the task repo).
 BULK_MEDIA_TYPE = "application/vnd.pingidentity.risk.feedback.bulk.v2+json"
 
+# The pingcli config key holding the environment ID of a profile. Reading it
+# is what makes the script's --environment-id flag optional.
+ENVIRONMENT_ID_KEY = "service.pingOne.endpoint.environmentID"
+
+
+def resolve_environment_id(
+    profile: str | None = None, pingcli_path: str = "pingcli"
+) -> str | None:
+    """Read the environment ID configured on a pingcli profile.
+
+    Uses ``pingcli config get`` so the script never parses the config file or
+    touches the secrets in it. Returns the UUID string, or ``None`` when
+    pingcli cannot be invoked, the profile has no environment ID configured,
+    or the output cannot be parsed — the caller then reports a clear error.
+    """
+    cmd = [pingcli_path, "config", "get", ENVIRONMENT_ID_KEY, "-O", "json"]
+    if profile:
+        cmd.extend(["-P", profile])
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    except OSError:
+        return None
+    if proc.returncode != 0:
+        return None
+    try:
+        envelope = json.loads(proc.stdout)
+        value = envelope["data"]["values"][ENVIRONMENT_ID_KEY]
+    except (json.JSONDecodeError, KeyError, TypeError):
+        return None
+    return value or None
+
 
 class BulkPostResult(NamedTuple):
     """Classified result of one bulk POST through pingcli.
@@ -151,8 +182,8 @@ class PingcliPoster:
     ) -> None:
         if not environment_id:
             raise ValueError(
-                "environment ID is required: the generic api command has no "
-                "profile-based environment resolution"
+                "environment ID is required: pass --environment-id or configure "
+                "one on the pingcli profile (pingcli pingone init)"
             )
         self.environment_id = environment_id
         self.profile = profile

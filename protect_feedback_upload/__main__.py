@@ -15,7 +15,7 @@
 
 Usage:
     python -m protect_feedback_upload upload labels.csv \
-        --environment-id <uuid> [--profile <profile>] [--batch-size 20] \
+        [--environment-id <uuid>] [--profile <profile>] [--batch-size 20] \
         [--dry-run] [--output-format text|json] [--pingcli-path pingcli]
 """
 
@@ -26,7 +26,7 @@ import sys
 
 from . import __version__
 from .batcher import ErrorObject
-from .pingcli_client import PingcliPoster
+from .pingcli_client import PingcliPoster, resolve_environment_id
 from .report import UploadReport
 from .uploader import run_upload
 
@@ -53,8 +53,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_upload.add_argument("input", help="path to the labels file (.csv, .ndjson, .jsonl), or - for stdin")
     p_upload.add_argument(
         "--environment-id",
-        required=True,
-        help="PingOne environment ID (the bulk endpoint's path parameter)",
+        default=None,
+        help=(
+            "PingOne environment ID (the bulk endpoint's path parameter). "
+            "Optional when the pingcli profile has one configured — "
+            "resolved from it automatically."
+        ),
     )
     p_upload.add_argument("-P", "--profile", default=None, help="pingcli profile to authenticate with")
     p_upload.add_argument(
@@ -96,16 +100,27 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.dry_run:
         poster = None
+        environment_id = args.environment_id
     else:
+        environment_id = args.environment_id or resolve_environment_id(
+            profile=args.profile, pingcli_path=args.pingcli_path
+        )
+        if not environment_id:
+            print(
+                "environment ID is required: pass --environment-id or configure "
+                "one on the pingcli profile (pingcli pingone init)",
+                file=sys.stderr,
+            )
+            return EXIT_INPUT_ERROR
         poster = PingcliPoster(
-            environment_id=args.environment_id,
+            environment_id=environment_id,
             profile=args.profile,
             pingcli_path=args.pingcli_path,
         )
     try:
         report = run_upload(
             input_path=args.input,
-            environment_id=args.environment_id,
+            environment_id=environment_id,
             poster=poster,
             batch_size=args.batch_size,
             dry_run=args.dry_run,
