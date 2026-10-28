@@ -54,6 +54,9 @@ protect-feedback-upload upload labels.csv --environment-id <uuid> -P <profile>
 
 # Machine-readable report
 protect-feedback-upload upload labels.csv -O json
+
+# Write rejected rows to a fix-and-resubmit file
+protect-feedback-upload upload labels.csv --errors-out fix-these.csv
 ```
 
 Exit codes: `0` all rows uploaded · `1` some rows failed or were skipped ·

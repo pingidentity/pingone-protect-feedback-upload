@@ -106,6 +106,11 @@ Only valid rows are batched and sent. Rows rejected **by the API** inside a
 200 response are terminal — fix and re-submit them individually (the bulk
 POST is not idempotent, so never re-send the whole file).
 
+`--errors-out <file>` writes all rejected rows (local skips and API
+failures) to a file in the input's format, with the original data in the
+standard columns plus error diagnostics — fix it and re-run the tool on
+that file. See [GETTING-STARTED.md](GETTING-STARTED.md).
+
 ## Example
 
 CSV (header + 2 rows, canonical column order):

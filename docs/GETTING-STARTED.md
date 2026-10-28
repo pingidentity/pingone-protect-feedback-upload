@@ -67,6 +67,7 @@ Useful flags:
 | `--dry-run` | Validate + show the batch plan, send nothing |
 | `-P <profile>` | Which pingcli profile to authenticate with (omit for the active one) |
 | `--environment-id <uuid>` | Target environment (optional — resolved from the profile when omitted) |
+| `--errors-out <file>` | Write all rejected rows to a file, ready to fix and re-submit (see below) |
 | `-O json` | Machine-readable report (same data as the text report) |
 | `--batch-size 1-20` | Items per request (default 20) |
 
@@ -92,6 +93,25 @@ Exit codes: `0` all rows uploaded · `1` some rows failed or skipped ·
 The bulk POST is **not idempotent** — re-uploading the original file after
 a partial success duplicates the labels that already landed. After fixing
 rejected rows, submit only those rows.
+
+`--errors-out` makes that easy: it writes every rejected row (local
+validation skips and API per-item failures) to a file in the same format
+as the input, with the error reason alongside the data:
+
+```bash
+protect-feedback-upload upload labels.csv --errors-out fix-these.csv
+```
+
+The rejected rows keep their original data in the standard columns — fix
+them in place — plus diagnostic columns (`input_index`, `source_line`,
+`error_field`, `error_message`) that the tool ignores when you re-run the
+fixed file:
+
+```bash
+protect-feedback-upload upload fix-these.csv
+```
+
+Never re-send the original file: only the rows that failed.
 
 ## Troubleshooting
 
