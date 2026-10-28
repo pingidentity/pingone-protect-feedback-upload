@@ -196,13 +196,65 @@ class TestCLI(unittest.TestCase):
 
         with mock.patch(
             "protect_feedback_upload.__main__.PingcliPoster", return_value=CapPoster()
-        ):
+        ) as poster_cls:
             code, out, _ = self._run_main(
                 ["upload", f.name, "--environment-id", "e"]
             )
         self.assertEqual(code, 0)
         self.assertEqual(captured["n"], 2)
         self.assertIn("2 requested, 2 successful", out)
+        # The explicit flag must reach the poster untouched.
+        self.assertEqual(poster_cls.call_args.kwargs["environment_id"], "e")
+
+    def test_live_run_resolves_env_id_from_profile(self):
+        # No --environment-id: the CLI must resolve it from the pingcli
+        # profile (mocked — the test never shells out to real pingcli).
+        f = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False)
+        f.write(make_csv(2))
+        f.close()
+
+        captured = {}
+
+        class CapPoster:
+            def post_bulk(self, batch):
+                captured["n"] = len(batch)
+                return (
+                    200,
+                    {"summary": {"requested": len(batch), "successful": len(batch), "errors": 0, "skipped": 0}},
+                    None,
+                )
+
+        with mock.patch(
+            "protect_feedback_upload.__main__.resolve_environment_id",
+            return_value="env-from-profile",
+        ), mock.patch(
+            "protect_feedback_upload.__main__.PingcliPoster", return_value=CapPoster()
+        ) as poster_cls:
+            code, out, _ = self._run_main(["upload", f.name])
+        self.assertEqual(code, 0)
+        self.assertEqual(captured["n"], 2)
+        self.assertIn("2 requested, 2 successful", out)
+        # The profile-resolved ID must reach the poster, not the flag default.
+        self.assertEqual(poster_cls.call_args.kwargs["environment_id"], "env-from-profile")
+
+    def test_live_run_fails_cleanly_when_env_id_unresolvable(self):
+        # Neither flag nor profile supplies an environment ID: input error,
+        # exit 3, and a message naming both remedies. The resolver is mocked
+        # so this path is hermetic on machines with and without pingcli.
+        f = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False)
+        f.write(make_csv(2))
+        f.close()
+
+        with mock.patch(
+            "protect_feedback_upload.__main__.resolve_environment_id",
+            return_value=None,
+        ):
+            code, out, err = self._run_main(["upload", f.name])
+        self.assertEqual(code, 3)
+        self.assertEqual(out, "")
+        self.assertIn("--environment-id", err)
+        self.assertIn("profile", err)
+        self.assertIn("pingcli pingone init", err)
 
 
 if __name__ == "__main__":
