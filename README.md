@@ -142,13 +142,13 @@ The commands use the shipped example file; swap in your own labels file
 when ready:
 
 ```bash
-protect-feedback-upload upload examples/labels-demo.csv --dry-run
+protect-feedback-upload upload examples/labels-sample.csv --dry-run
 ```
 
 Fix anything the dry run rejects, then upload for real:
 
 ```bash
-protect-feedback-upload upload examples/labels-demo.csv
+protect-feedback-upload upload examples/labels-sample.csv
 ```
 
 To watch local validation in action, run the invalid example — every row
@@ -184,10 +184,9 @@ are in the [input format reference](#input-format-reference).
 
 | File | Rows | What it demonstrates |
 |---|---|---|
-| `labels-demo.csv` | 4 valid (CSV) | All three verdicts, four subject/trigger combinations, a successful upload |
+| `labels-sample.csv` | 5 valid (CSV) | All three verdicts, four subject types (including PINGONE_USER_ID and TIME_RANGE), an `attributes` cell — the starting point for your own file |
 | `labels-demo.ndjson` | 3 valid (NDJSON) | The JSON input format, including a TIME_RANGE subject (no `subject.value`) |
 | `labels-demo-invalid.csv` | 5 invalid | Local validation: every row is rejected with its line number and reason — nothing is sent |
-| `labels-sample.csv` | 5 valid (CSV) | A starting point for your own file, including an `attributes` cell |
 
 The example files use recognizable `subject_value` values (`TXN-DEMO-*`,
 `NDJSON-DEMO-*`, and the documentation-reserved IP `198.51.100.78`) so

@@ -32,14 +32,12 @@ protect-feedback-upload upload labels.csv --dry-run
 
 # 2. Upload — one command; environment ID comes from the pingcli profile
 protect-feedback-upload upload labels.csv
-
-# 3. If rows were rejected: write them to a fix-and-resubmit file
-protect-feedback-upload upload labels.csv --errors-out fix-these.csv
-#    fix-these.csv carries the original data in the standard columns (fix
-#    them in place) plus input_index, source_line, error_field,
-#    error_message — the tool ignores those diagnostics on re-read:
-protect-feedback-upload upload fix-these.csv   # rejected rows only
 ```
+
+If rows are rejected: fix **only those rows** and re-submit only them —
+the report names each rejected row with its input line and reason, and
+`--errors-out <file>` writes the rejected rows (data included) to a file
+ready to fix and re-run. Never the original file.
 
 ## Command reference
 
@@ -50,7 +48,7 @@ protect-feedback-upload upload <file.csv|file.ndjson|-> [flags]
 | Flag | Meaning |
 |---|---|
 | `--dry-run` | Validate + batch only, send nothing (always the first step) |
-| `--errors-out <file>` | Write every row that did not land (local skips, per-item API failures, whole-batch failures, never-attempted batches) to a fix-and-resubmit file |
+| `--errors-out <file>` | Write every row that did not land to a file ready to fix and re-submit |
 | `-P <profile>` | pingcli profile for auth (omit = the active profile) |
 | `--environment-id <uuid>` | Target environment (omit = resolved from the profile; pass only to deliberately cross environments) |
 | `-O json` | Machine-readable report (`summary`, `batches[]`, `failedItems[]`, `skippedItems[]`) |

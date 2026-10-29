@@ -55,10 +55,10 @@ class TestResolveEnvironmentId(unittest.TestCase):
             return resolve_environment_id(profile=profile, pingcli_path=pingcli_path)
 
     def test_returns_configured_value(self):
-        stdout = json.dumps(config_envelope("f606ebfd-628d-4fd3-a3cd-dd0d5b925e48"))
+        stdout = json.dumps(config_envelope("11111111-2222-4333-8444-555555555555"))
         run_mock = run_stub(stdout=stdout)
         self.assertEqual(
-            self._resolve(run_mock), "f606ebfd-628d-4fd3-a3cd-dd0d5b925e48"
+            self._resolve(run_mock), "11111111-2222-4333-8444-555555555555"
         )
 
     def test_empty_value_returns_none(self):
