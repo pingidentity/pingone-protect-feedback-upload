@@ -392,14 +392,31 @@ python -m unittest discover tests
 
 ## Agent skill
 
-A skill teaches coding agents (Claude Code and similar) to drive this tool
-safely — above all the non-idempotency rule: re-submit only rejected rows,
-never re-send a file after a partial success. Install it by copying the
-directory into the agent's skills folder:
+Coding agents (Claude Code and similar) can drive this tool — and the one
+mistake they're most likely to make is the most destructive one: "retrying
+an upload" by re-sending the original file, which duplicates every label
+that already landed. A skill prevents that by loading the safety rules
+into the agent's context whenever it works on risk-feedback uploads.
+
+`skills/protect-feedback-upload/SKILL.md` teaches:
+
+- **the critical rule** — the bulk POST is not idempotent: re-submit only
+  rejected rows, never re-send a file after a partial success
+- **the workflow** — dry run first, then upload, then the `--errors-out`
+  fix-and-resubmit loop
+- **the command surface** — flags, input formats, and what each exit code
+  (0/1/2/3) means for remediation
+- **common errors** — unresolvable environment ID, 401/403, 404, the
+  millisecond-timestamp requirement
+
+Install it by copying the directory into the agent's skills folder:
 
 ```bash
 cp -r skills/protect-feedback-upload ~/.claude/skills/
 ```
+
+No registration or catalog involved — the skill is plain markdown in this
+repository, and nothing about it touches any pingcli repo.
 
 ## License
 
