@@ -390,6 +390,17 @@ Equivalent NDJSON lines:
 python -m unittest discover tests
 ```
 
+## Agent skill
+
+A skill teaches coding agents (Claude Code and similar) to drive this tool
+safely — above all the non-idempotency rule: re-submit only rejected rows,
+never re-send a file after a partial success. Install it by copying the
+directory into the agent's skills folder:
+
+```bash
+cp -r skills/protect-feedback-upload ~/.claude/skills/
+```
+
 ## License
 
 Apache License 2.0 — see [LICENSE](LICENSE).
