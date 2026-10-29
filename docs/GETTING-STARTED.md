@@ -26,8 +26,16 @@ Nothing in your Ping CLI installation is modified — the script calls
 
    Note the profile name you configure (shown by `pingcli config profiles list`).
 3. **A labels file** — CSV or NDJSON. The exact columns/fields are in
-   [input-format.md](input-format.md); a ready-to-edit example ships at
-   [labels-sample.csv](labels-sample.csv).
+   [input-format.md](input-format.md). Ready-to-run examples ship in the
+   repo's [examples/](../examples/README.md) directory, and
+   [labels-sample.csv](labels-sample.csv) is a starting point for your own
+   file:
+
+   | File | Rows | Use it to see |
+   |---|---|---|
+   | `examples/labels-demo.csv` | 4 valid | a successful upload |
+   | `examples/labels-demo.ndjson` | 3 valid | the NDJSON input format |
+   | `examples/labels-demo-invalid.csv` | 5 invalid | local validation rejecting rows before anything is sent |
 
 ## Install
 
@@ -40,16 +48,25 @@ dependencies beyond Python itself)
 
 ## Run it
 
-**Always start with a dry run — it validates and batches, sends nothing:**
+**Always start with a dry run — it validates and batches, sends nothing.**
+The commands below use the shipped example file; swap in your own labels
+file when ready:
 
 ```bash
-protect-feedback-upload upload labels.csv --dry-run
+protect-feedback-upload upload examples/labels-demo.csv --dry-run
 ```
 
 Fix anything the dry run rejects, then upload for real:
 
 ```bash
-protect-feedback-upload upload labels.csv
+protect-feedback-upload upload examples/labels-demo.csv
+```
+
+To watch local validation in action, run the invalid example — every row
+is rejected with its line number and reason, and nothing is sent:
+
+```bash
+protect-feedback-upload upload examples/labels-demo-invalid.csv
 ```
 
 The environment ID comes from your pingcli profile, so you don't pass it.
