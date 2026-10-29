@@ -1,8 +1,7 @@
 # Example label files
 
 Ready-to-run inputs for `protect-feedback-upload`. Column and field rules
-are documented in [../docs/input-format.md](../docs/input-format.md); the
-full guide is [../docs/GETTING-STARTED.md](../docs/GETTING-STARTED.md).
+and the full guide are in [../docs/GUIDE.md](../docs/GUIDE.md).
 
 | File | Rows | What it demonstrates |
 |---|---|---|

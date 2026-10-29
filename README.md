@@ -3,8 +3,9 @@
 Feedback API v2 Bulk Upload CLI — a standalone script for bulk-uploading
 PingOne Protect risk feedback labels.
 
-**Start here: [docs/GETTING-STARTED.md](docs/GETTING-STARTED.md)** — install,
-first run, report format, and troubleshooting.
+**Start here: [docs/GUIDE.md](docs/GUIDE.md)** — the complete guide:
+profiles and environments, install, run guide, `--errors-out` workflow,
+full input-format reference, and troubleshooting.
 
 ## Why this exists
 
@@ -13,7 +14,7 @@ request**, returns **per-item errors inside a 200 response**, and the POST
 is **not idempotent** — re-sending a file after a partial failure
 duplicates successful labels. The bulk workflow logic lives here:
 
-- reads CSV or NDJSON label files (see [docs/input-format.md](docs/input-format.md))
+- reads CSV or NDJSON label files (see [docs/GUIDE.md](docs/GUIDE.md))
 - validates every row locally before anything is sent (enums, timestamp
   format `YYYY-MM-DDThh:mm:ss.SSSZ`, length limits, TIME_RANGE rules) —
   the API remains authoritative
