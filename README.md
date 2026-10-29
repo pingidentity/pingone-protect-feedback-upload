@@ -59,6 +59,37 @@ One profile ↔ one environment: `pingcli pingone init` wires the worker
 app and its environment together into the profile. So the profile already
 "knows" the environment, and the tool exploits that.
 
+**Creating a profile**
+
+The wizard is the normal path — `pingcli pingone init` (interactive; type
+it alone, nothing after it). It asks for the worker app's client ID and
+secret, the environment ID, and the region, then tests the auth.
+
+For scripts and CI there's the non-interactive path (note `key=value`,
+not separate args):
+
+```bash
+# create the profile (--set-active skips the y/N prompt)
+pingcli config profiles create --name myprofile --set-active
+
+# worker app credentials (secret is stored in the OS keychain)
+pingcli config set --profile myprofile service.pingOne.authentication.clientCredentials.clientID=<id>
+pingcli config set --profile myprofile service.pingOne.authentication.clientCredentials.clientSecret=<secret>
+pingcli config set --profile myprofile service.pingOne.authentication.grantType=client_credentials
+pingcli config set --profile myprofile service.pingOne.enabled=true
+
+# where it points: environment + region
+pingcli config set --profile myprofile service.pingOne.endpoint.environmentID=<env-uuid>
+pingcli config set --profile myprofile service.pingOne.endpoint.rootDomain=pingone.com
+```
+
+Verify before using it for an upload:
+
+```bash
+pingcli config get service.pingOne.endpoint.environmentID -P myprofile
+pingcli pingone api -P myprofile environments/<env-uuid>   # expect HTTP 200
+```
+
 **Resolution order** for the target environment:
 
 1. `--environment-id` given → use it verbatim (explicit override)
