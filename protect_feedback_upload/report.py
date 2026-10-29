@@ -38,15 +38,18 @@ class UploadReport:
     raw_rows: dict = field(default_factory=dict)
     items_by_index: dict = field(default_factory=dict)
     input_format: str = "csv"
+    # Whole-batch failures: (BatchResult, item_indices, source_lines, payloads)
+    batch_failures: list = field(default_factory=list)
 
     def write_errors_file(self, path: str) -> int:
-        """Write all rejected rows (local skips + API failures) to ``path``
-        in the input's format. Returns the row count written."""
+        """Write all rejected rows (local skips + API failures + whole-batch
+        failures) to ``path`` in the input's format. Returns the row count
+        written."""
         from .errors_out import write_errors
 
         return write_errors(
             path, self.input_format, self.skipped_items, self.failed_items,
-            self.items_by_index, self.raw_rows,
+            self.items_by_index, self.raw_rows, self.batch_failures,
         )
 
     def to_wire(self) -> dict:

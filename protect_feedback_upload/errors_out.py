@@ -37,25 +37,34 @@ from __future__ import annotations
 import csv
 import json
 
-from .batcher import FailedItem
+from .batcher import BatchResult, FailedItem
 from .model import CSV_COLUMNS, RiskFeedback, ValidationError
 
 DIAG_COLUMNS = ("input_index", "source_line", "error_field", "error_message", "raw_row")
 
 
 def _normalized_errors(
-    skipped: list[ValidationError], failed: list[FailedItem]
+    skipped: list[ValidationError],
+    failed: list[FailedItem],
+    batch_failures: list | None = None,
 ) -> list[tuple[int, int, str, str]]:
-    """Merge local skips and server-side failures into one error stream,
-    ordered by input position: (input_index, source_line, field, message)."""
-    merged = [
-        (s.input_index, s.source_line, s.field, s.message) for s in skipped
-    ]
-    merged += [
-        (f.input_index, f.source_line, "", str(f.error)) for f in failed
-    ]
-    merged.sort(key=lambda e: e[0])
-    return merged
+    """Merge local skips, server-side per-item failures, and whole-batch
+    failures into one error stream, ordered by input position:
+    (input_index, source_line, field, message). A row appearing in several
+    sources keeps the most specific message (per-item beats batch-level)."""
+    by_index: dict[int, tuple[int, int, str, str]] = {}
+    for f in failed:
+        by_index[f.input_index] = (f.input_index, f.source_line, "", str(f.error))
+    for batch_result, item_indices, source_lines, payloads in batch_failures or []:
+        msg = str(batch_result.error) if batch_result.error else "batch failed"
+        for idx, line in zip(item_indices, source_lines):
+            # Per-item failures carry their own reason — don't overwrite.
+            by_index.setdefault(idx, (idx, line, "", msg))
+    for s in skipped:
+        # Local skips are never duplicated by server sources, but keep the
+        # last write safe anyway.
+        by_index[s.input_index] = (s.input_index, s.source_line, s.field, s.message)
+    return sorted(by_index.values(), key=lambda e: e[0])
 
 
 def _item_to_row(item: RiskFeedback) -> list[str]:
@@ -83,9 +92,10 @@ def write_errors_csv(
     failed: list[FailedItem],
     items_by_index: dict[int, RiskFeedback],
     raw_records: dict[int, list[str]],
+    batch_failures: list | None = None,
 ) -> int:
     """Write rejected rows as a re-runnable CSV. Returns the row count."""
-    errors = _normalized_errors(skipped, failed)
+    errors = _normalized_errors(skipped, failed, batch_failures)
     with open(path, "w", encoding="utf-8", newline="") as fh:
         writer = csv.writer(fh)
         writer.writerow(list(CSV_COLUMNS) + list(DIAG_COLUMNS))
@@ -110,9 +120,10 @@ def write_errors_ndjson(
     failed: list[FailedItem],
     items_by_index: dict[int, RiskFeedback],
     raw_lines: dict[int, str],
+    batch_failures: list | None = None,
 ) -> int:
     """Write rejected rows as re-runnable NDJSON. Returns the line count."""
-    errors = _normalized_errors(skipped, failed)
+    errors = _normalized_errors(skipped, failed, batch_failures)
     with open(path, "w", encoding="utf-8") as fh:
         for input_index, source_line, field, message in errors:
             obj: dict = {}
@@ -139,8 +150,9 @@ def write_errors(
     failed: list[FailedItem],
     items_by_index: dict[int, RiskFeedback],
     raw_rows: dict,
+    batch_failures: list | None = None,
 ) -> int:
     """Write rejected rows to ``path`` in the input's format."""
     if fmt == "ndjson":
-        return write_errors_ndjson(path, skipped, failed, items_by_index, raw_rows)
-    return write_errors_csv(path, skipped, failed, items_by_index, raw_rows)
+        return write_errors_ndjson(path, skipped, failed, items_by_index, raw_rows, batch_failures)
+    return write_errors_csv(path, skipped, failed, items_by_index, raw_rows, batch_failures)

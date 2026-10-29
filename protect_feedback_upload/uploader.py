@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from .batcher import (
     BatchResult,
+    ErrorObject,
     build_failed_items,
     post_batch_with_retry,
     split_into_batches,
@@ -76,7 +77,8 @@ def run_upload(
 
     source_line_by_index = {t.input_index: t.source_line for t in items}
 
-    for batch_idx, batch in enumerate(split_into_batches(items, batch_size)):
+    batches = split_into_batches(items, batch_size)
+    for batch_idx, batch in enumerate(batches):
         item_indices = [t.input_index for t in batch]
         source_lines = [t.source_line for t in batch]
         payloads = [t.item for t in batch]
@@ -100,7 +102,26 @@ def run_upload(
             # Items of this batch and all later batches were not uploaded.
             remaining = report.requested - report.successful - report.failed - report.skipped
             report.skipped += remaining
+            # The aborting batch and every later batch were never accepted —
+            # capture them for --errors-out.
+            report.batch_failures.append((batch_result, item_indices, source_lines, payloads))
+            for later in batches[batch_idx + 1 :]:
+                report.batch_failures.append(
+                    (
+                        BatchResult(
+                            index=0, items=len(later), error=ErrorObject(message="not attempted (run aborted)")
+                        ),
+                        [t.input_index for t in later],
+                        [t.source_line for t in later],
+                        [t.item for t in later],
+                    )
+                )
             break
+
+        # A batch that failed as a whole (4xx rejection, 500 after retries,
+        # exhausted 429s, transport failure): its items never landed.
+        if batch_result.failed and not outcome.parsed:
+            report.batch_failures.append((batch_result, item_indices, source_lines, payloads))
 
         if outcome.parsed is not None:
             report.failed_items.extend(build_failed_items(outcome.parsed, item_indices, source_lines))
