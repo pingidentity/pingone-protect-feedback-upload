@@ -1,0 +1,6 @@
+subject_type,subject_value,verdict,occurred_from,occurred_to,trigger,flow_type,confirmed_at,reason,analyst,confidence,fraud_type,attributes
+EXTERNAL_TRANSACTION_ID,TXN-1001,FRAUD,2026-01-15T08:03:17.000Z,,CHARGEBACK,TRANSACTION,2026-01-20T10:30:00.000Z,Chargeback received within 24h of the transaction,analyst@yourcompany.com,HIGH,CARD_TESTING,"{""src_ip"": ""192.0.2.45"",""amount"": ""149.99""}"
+IP_ADDRESS,198.51.100.22,SUSPECTED_FRAUD,2026-01-16T00:00:00.000Z,2026-01-16T06:00:00.000Z,,ACCESS,,IP part of known bot farm ASN,analyst@yourcompany.com,HIGH,CREDENTIAL_STUFFING,
+TIME_RANGE,,LEGITIMATE,2026-10-20T08:00:00.000Z,2026-10-22T17:00:00.000Z,,AUTHENTICATION,,User behavior verified legitimate for this window,analyst@yourcompany.com,MEDIUM,,
+EXTERNAL_TRANSACTION_ID,TXN-1004,FRAUD,2026-01-17T14:22:05.000Z,,MANUAL_REVIEW,REGISTRATION,,Multiple signups from same device fingerprint,analyst@yourcompany.com,MEDIUM,BOT_FARM,
+PINGONE_USER_ID,a1b2c3d4-0000-4000-8000-000000001234,LEGITIMATE,2026-01-18T09:15:00.000Z,,,,,False positive - verified legitimate customer,analyst@yourcompany.com,LOW,,

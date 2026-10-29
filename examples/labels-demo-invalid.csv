@@ -1,0 +1,6 @@
+subject_type,subject_value,verdict,occurred_from,occurred_to,trigger,flow_type,confirmed_at,reason,analyst,confidence,fraud_type,attributes
+EXTERNAL_TRANSACTION_ID,TXN-DEMO-BAD-1,NOPE,2026-10-22T09:00:00.000Z,,MANUAL_REVIEW,TRANSACTION,,Bad verdict enum,analyst@yourcompany.com,HIGH,,
+EXTERNAL_TRANSACTION_ID,TXN-DEMO-BAD-2,FRAUD,not-a-timestamp,,MANUAL_REVIEW,TRANSACTION,,Bad timestamp format,analyst@yourcompany.com,HIGH,,
+EXTERNAL_TRANSACTION_ID,TXN-DEMO-BAD-3,FRAUD,2026-10-22T09:00:00Z,,MANUAL_REVIEW,TRANSACTION,,Missing millisecond precision,analyst@yourcompany.com,HIGH,,
+TIME_RANGE,should-be-empty,SUSPECTED_FRAUD,2026-10-22T09:00:00.000Z,,MANUAL_REVIEW,TRANSACTION,,TIME_RANGE with subject_value,analyst@yourcompany.com,HIGH,,
+EXTERNAL_TRANSACTION_ID,TXN-DEMO-BAD-4,FRAUD,2026-10-22T09:00:00.000Z,2026-10-30T09:00:00.000Z,MANUAL_REVIEW,TRANSACTION,,TIME_RANGE window is 8 days,analyst@yourcompany.com,HIGH,,
