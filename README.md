@@ -190,9 +190,12 @@ The bulk POST is **not idempotent** — re-uploading the original file after
 a partial success duplicates the labels that already landed. After fixing
 rejected rows, submit only those rows.
 
-`--errors-out` makes that easy: it writes every rejected row (local
-validation skips and API per-item failures) to a file in the same format
-as the input, with the error reason alongside the data:
+`--errors-out` makes that easy: it writes **every row that did not land**
+to a file in the same format as the input, with the error reason alongside
+the data — local validation skips, API per-item failures inside a 200
+response, whole-batch rejections (HTTP 4xx, 500 after retries, exhausted
+rate limiting, transport errors), and rows of batches never attempted
+because the run aborted:
 
 ```bash
 protect-feedback-upload upload labels.csv --errors-out fix-these.csv
